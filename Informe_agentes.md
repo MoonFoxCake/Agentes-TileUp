@@ -9,7 +9,7 @@ Este informe documenta la formulación completa del problema de TileUp y el dise
 
 ### 1.1 Qué es TileUp?
 
-TileUp es un juego de rompecabezas en el que se colocan fichas sobre un tablero. Cada ficha tiene dos valores: un color y un número. Cuando se coloca una ficha, se revisan las fichas adyacentes; si hay dos o más fichas adyacentes del mismo color y valor, se fusionan en una sola. La secuencia de fichas por colocar es fija y se conoce por completo desde el inicio de la partida.
+TileUp es un juego de rompecabezas en el que se colocan fichas sobre un tablero. Cada ficha tiene dos valores: un color y un número. Cuando se coloca una ficha, se revisan las fichas adyacentes; si hay dos o más fichas adyacentes del mismo color, se fusionan en una sola. El valor de la ficha fusionada es la suma de los valores de las fichas que la componen. La secuencia de fichas por colocar es fija y se conoce por completo desde el inicio de la partida.
 
 A partir de la observación del juego se pueden extraer las siguientes conclusiones:
 
@@ -24,17 +24,23 @@ El estado del tablero se representa como una tupla de filas y columnas. Cada fic
 
 El estado es manejado por el motor del juego y se le pasa al agente. El agente no necesita construir el estado desde cero; lo recibe ya estructurado y opera sobre él.
 
+Un estado es un par de 2 valores; T e i
+
+T es el tablero que es la tupla de la cantidad de tuplas con la cantidad de celdas
+
+i es el indice de la siguiente ficha pendiente que va desde 0 hata M
+ 
 ### 1.3 Operador de sucesión
 
 El operador de sucesión también es manejado por el motor y se le pasa al algoritmo de búsqueda. Su funcionamiento es el siguiente:
 
 1. Se revisan las acciones legales (celdas vacías donde se pueda colocar la ficha actual).
 2. Se coloca la ficha en la celda elegida.
-3. Se revisan las fichas adyacentes. Si hay dos o más fichas adyacentes del mismo color y valor, se fusionan en una única ficha.
+3. Se revisan las fichas adyacentes. Si hay dos o más fichas adyacentes del mismo color se fusionan y suman valores de las fichas.
 
 ### 1.4 Costo de las acciones
 
-El costo de cada acción es **0**. Esto se debe a que la cantidad de fichas o pasos se define al inicio de la partida: sin importar las decisiones que se tomen, siempre se tendrá que colocar la misma cantidad de fichas. Por lo tanto, no hay un costo diferencial entre acciones.
+El costo de cada acción es **0**. Esto se debe a que la cantidad de fichas o pasos se define al inicio de la partida, sin importar las decisiones que se tomen, siempre se tendrá que colocar la misma cantidad de fichas. Por lo tanto, no hay un costo diferencial entre acciones.  Esto hace que no exista ningun camino mas corto que otro o algo que optimizar, lo que se optimiza es el final de la partida por asi decirlo
 
 ### 1.5 Prueba de meta
 
@@ -42,7 +48,7 @@ La condición de meta verifica si ya se colocaron todas las fichas. Si es así, 
 
 La condición de derrota es un poco más compleja: primero verifica si ya se terminó; si no se ha terminado y ya no hay espacio disponible en el tablero, se alcanza la derrota.
 
----
+En esta parte hay una exclusion mutua, es decir que si se da una condicion(que primero se evalua la meta) inmediatamente se descarta una derrota
 
 ## 2. Exploración de algoritmos de búsqueda
 
@@ -73,24 +79,31 @@ El más complejo y con más requerimientos. Requiere una heurística admisible p
 
 ### 2.4 Propuesta de heurística para Beam
 
-Para Beam Search se exploró la siguiente formulación. Sea:
+La heurística diseñada combina el costo presente con un estimado del potencial de fusión futuro. Se definen las siguientes cantidades:
 
-- \(T(s)\): cantidad de campos ocupados en el estado \(s\).
-- \(Vivos\): colores que tienen al menos una ficha en el tablero.
-- \(\sigma\): espacios vacíos.
-- \(c\): color.
+T(s): número de celdas ocupadas en el estado s.
+vivos(s): conjunto de colores que tienen al menos una ficha en el tablero.
+c:un color cualquiera del juego (c ∈ {1, ..., K}).
+σ_c(s): número de celdas vacías adyacentes a componentes del color c (slots de fusión).
+freq(c, i): número de fichas del color c que aparecen en la secuencia desde el paso i hasta el final.
+β: peso ajustable del término de lookahead.
 
-Una primera aproximación sería:
-```
-T(s) - Vivos \* σ \* c
-```
-Esta fórmula es muy básica. Se puede refinar introduciendo el parámetro \(\beta\) (ajustable en Beam Search) y considerando la frecuencia de cada color en la secuencia de fichas por colocar:
+Al unir todos estos elementos queda una heuristica algo asi:
 
 ```
-T(s) - β \* ∑<sub>vivos</sub> min(σ<sub>c</sub>(s) , frecuencia(c, i)) 
+T(s) − β · Σ{c ∈ vivos(s) min(σ_c(s), freq(c, i))}
 ```
 
-Donde \(\sigma_c(s)\) es el número de espacios vacíos compatibles con el color \(c\), y \(\text{frecuencia}(c, i)\) es cuántas fichas del color \(c\) quedan por colocar a partir del paso \(i\).
+
+Aca el T(s) es el presente, mientras mas celdas ocupadas es peor, ya que la heuristica mientras menor mejor,  β reoresenta el futuro ya que es el lookahead, la sumatoria ko que hace es que revisa el tablero para colores, el minimo es para poder ver el menor cantidad de espacios
+
+## 2.5 Admisibilidad
+
+La heuristica no es admisible, esto es porque en una admisible se puede garantizar que la heuristica sea optima.  Esto es debido a que varias fichas pueden estar en el mismo lugar o debido al posicionamiento de alguna de un color distinto.
+
+Lo que se pierde a la hora de que no sea admisible, se pierde a la garantia de que sea optima. Esto no es algo importante ya que con beam search no se garantiza que sea optimo del todo. 
+
+Lo que se gana en cambio es que es mejor escalable, la heuristica es mas facil de manejar y se puede ajustar mejor los parametros.
 
 
 ---
@@ -98,9 +111,9 @@ Donde \(\sigma_c(s)\) es el número de espacios vacíos compatibles con el color
 ## 3. Agente evolutivo
 
 
-Algoritmo genético generacional con elitismo y decodificación indirecta,
-escrito desde cero (sin librerías de computación evolutiva). El agente
-planifica la partida completa antes de colocar la primera ficha.
+Algoritmo genético generacional con elitismo y decodificación indirecta, escrito desde cero (sin librerías de computación evolutiva). El agente planifica la partida completa antes de colocar la primera ficha. 
+
+
 
 ---
 
