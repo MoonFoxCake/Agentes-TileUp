@@ -1,17 +1,110 @@
 
-# Agente evolutivo 
+# Informe 
+
+Este informe documenta la formulación completa del problema de TileUp y el diseño de los agentes desarrollados para resolverlo. 
+
+---
+
+## 1. Descripción del juego y formulación del problema
+
+### 1.1 Qué es TileUp?
+
+TileUp es un juego de rompecabezas en el que se colocan fichas sobre un tablero. Cada ficha tiene dos valores: un color y un número. Cuando se coloca una ficha, se revisan las fichas adyacentes; si hay dos o más fichas adyacentes del mismo color y valor, se fusionan en una sola. La secuencia de fichas por colocar es fija y se conoce por completo desde el inicio de la partida.
+
+A partir de la observación del juego se pueden extraer las siguientes conclusiones:
+
+1. **Es determinista.** Si se coloca una ficha en una posición dada, el resultado es siempre el mismo.
+2. **Es completamente observable.** El tablero es visible en todo momento y se conoce el orden de las fichas por venir.
+3. **Puede ser finito o infinito.** Existen modos de juego con un número finito de fichas (el motor del juego tiene un fin) y modos infinitos (como el *Endless Mode*). Este informe se centra en el modo finito. (https://www.reddit.com/r/TileUp/comments/1x0b35m/tile_up_endless_mode_october_7/) 
+4. **Tiene un factor de ramificación muy alto.** Bajo una estrategia óptima, en cada paso se pueden colocar piezas juntas para fusionarlas, en lados aleatorios, o en el mismo lado pero con valores distintos. El espacio de búsqueda crece exponencialmente.
+
+### 1.2 Representación del estado
+
+El estado del tablero se representa como una tupla de filas y columnas. Cada ficha se representa como una tupla de dos valores: color y número. En consecuencia, el estado completo es una tupla de tuplas.
+
+El estado es manejado por el motor del juego y se le pasa al agente. El agente no necesita construir el estado desde cero; lo recibe ya estructurado y opera sobre él.
+
+### 1.3 Operador de sucesión
+
+El operador de sucesión también es manejado por el motor y se le pasa al algoritmo de búsqueda. Su funcionamiento es el siguiente:
+
+1. Se revisan las acciones legales (celdas vacías donde se pueda colocar la ficha actual).
+2. Se coloca la ficha en la celda elegida.
+3. Se revisan las fichas adyacentes. Si hay dos o más fichas adyacentes del mismo color y valor, se fusionan en una única ficha.
+
+### 1.4 Costo de las acciones
+
+El costo de cada acción es **0**. Esto se debe a que la cantidad de fichas o pasos se define al inicio de la partida: sin importar las decisiones que se tomen, siempre se tendrá que colocar la misma cantidad de fichas. Por lo tanto, no hay un costo diferencial entre acciones.
+
+### 1.5 Prueba de meta
+
+La condición de meta verifica si ya se colocaron todas las fichas. Si es así, la partida termina con éxito.
+
+La condición de derrota es un poco más compleja: primero verifica si ya se terminó; si no se ha terminado y ya no hay espacio disponible en el tablero, se alcanza la derrota.
+
+---
+
+## 2. Exploración de algoritmos de búsqueda
+
+### 2.1 Restricciones del problema
+
+La solución debe ser rápida y económica: no debe consumir muchos recursos y debe resolver en un tiempo razonable, ya que el juego toma tiempo. Con esto en mente, se evaluaron las siguientes opciones.
+
+### 2.2 Algoritmos descartados de entrada
+
+- **DFS (Depth-First Search):** dado el alto factor de ramificación, DFS explora caminos extremadamente largos y puede quedar atrapado en ramas improductivas. Es extremadamente ineficiente.
+- **BFS (Breadth-First Search):** el número de estados posibles crece exponencialmente con la profundidad. BFS requiere almacenar todos los estados de un nivel, lo cual es inviable en memoria y tiempo.
+
+Ambos fueron descartados por ineficiencia estructural frente al tamaño del espacio de estados.
+
+### 2.3 Algoritmos considerados
+
+#### Greedy
+
+Algoritmo informado a corto plazo: solo ve los nodos que tiene frente a él y sigue el más barato. Se asemeja a DFS en que profundiza una única ruta. Es difícil definir una buena heurística para él y no garantiza eficiencia ni completitud, aunque al ser partidas cortas no debería tener problemas graves.
+
+#### Beam Search
+
+Explora varias ramas en paralelo, lo que consume más memoria que Greedy pero puede encontrar mejores soluciones. También es difícil definir una heurística adecuada y no garantiza completitud ni optimalidad. Sin embargo, su naturaleza de exploración acotada lo hace atractivo para problemas con ramificación alta.
+
+#### A*
+
+El más complejo y con más requerimientos. Requiere una heurística admisible para garantizar completitud y optimalidad. Al almacenar los caminos no útiles, es más pesado en memoria. Si la heurística no es admisible, se pierden las garantías.
+
+### 2.4 Propuesta de heurística para Beam
+
+Para Beam Search se exploró la siguiente formulación. Sea:
+
+- \(T(s)\): cantidad de campos ocupados en el estado \(s\).
+- \(Vivos\): colores que tienen al menos una ficha en el tablero.
+- \(\sigma\): espacios vacíos.
+- \(c\): color.
+
+Una primera aproximación sería:
+```
+T(s) - Vivos \* σ \* c
+```
+Esta fórmula es muy básica. Se puede refinar introduciendo el parámetro \(\beta\) (ajustable en Beam Search) y considerando la frecuencia de cada color en la secuencia de fichas por colocar:
+
+```
+T(s) - β \* ∑<sub>vivos</sub> min(σ<sub>c</sub>(s) , frecuencia(c, i)) 
+```
+
+Donde \(\sigma_c(s)\) es el número de espacios vacíos compatibles con el color \(c\), y \(\text{frecuencia}(c, i)\) es cuántas fichas del color \(c\) quedan por colocar a partir del paso \(i\).
+
+
+---
+
+## 3. Agente evolutivo
+
 
 Algoritmo genético generacional con elitismo y decodificación indirecta,
 escrito desde cero (sin librerías de computación evolutiva). El agente
 planifica la partida completa antes de colocar la primera ficha.
 
-Este documento explica cómo está construido el agente, por qué se tomaron
-las decisiones de diseño, y qué sustenta cada una. Corresponde al punto 3
-del núcleo obligatorio de la Tarea Corta 1 de IC-6200.
-
 ---
 
-## 1. Formulación del agente
+## 3. 1. Formulación del agente
 
 ### Idea general
 
@@ -55,7 +148,7 @@ de genes (cruce de dos puntos, mutación de baja probabilidad por gen).
 
 ---
 
-## 2. Función de aptitud
+## 3. 2. Función de aptitud
 
 Simulamos la partida con el motor y comparamos cada cromosoma con una
 tupla lexicográfica:
@@ -82,7 +175,7 @@ primer componente manda, y solo si empatan pasa al segundo.
 
 ---
 
-## 3. Población inicial
+## 3. 3. Población inicial
 
 - **Tamaño P = 100**.
 - **Todos aleatorios**.
@@ -110,7 +203,7 @@ como evaluación pendiente.
 
 ---
 
-## 4. Operadores evolutivos
+## 3. 4. Operadores evolutivos
 
 ### Selección por torneo (k = 3)
 
@@ -172,7 +265,7 @@ con esa recomendación.
 
 ---
 
-## 5. Reemplazo, caché y criterios de parada
+## 3. 5. Reemplazo, caché y criterios de parada
 
 ### Generacional con elitismo (E = 3)
 
@@ -226,7 +319,7 @@ El bucle se detiene al cumplirse lo primero de:
 
 ---
 
-## 6. Hiperparámetros
+## 3. 6. Hiperparámetros
 
 | Parámetro | Valor | Qué controla |
 |---|---|---|
@@ -245,7 +338,7 @@ con barridos experimentales.
 
 ---
 
-## 7. Determinismo
+## 3. 7. Determinismo
 
 Los criterios de parada por óptimo, estancamiento y generaciones son
 deterministas. Toda la aleatoriedad viene de un único `random.Random(semilla)`
@@ -256,12 +349,12 @@ la velocidad de la máquina. Para reproducibilidad estricta se recomienda
 usar límites de tiempo holgados, o confiar en los otros criterios.
 
 ---
-
-## 8. Referencias
+##  Referencias
 
 - Russell, S., & Norvig, P. (2021). *Artificial Intelligence: A Modern
   Approach* (4th ed.). Pearson.
 - Woodruff, C. (2025). *Day 31: Best Practices for Tuning Genetic
   Algorithm Parameters*. woodruff.dev
 - Material del curso IC-6200, Tecnológico de Costa Rica.
+- Especificación oficial de la Tarea Corta 1 (TC1-tileup).
 
