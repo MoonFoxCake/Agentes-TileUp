@@ -1,0 +1,11 @@
+.venv/
+__pycache__/
+.pytest_cache/
+*.pyc
+soluciones/
+sol_*.txt
+solucion.txt
+.vscode/
+.ipynb_checkpoints/
+.soluciones/
+.instancias_experimento/
