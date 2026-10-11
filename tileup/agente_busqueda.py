@@ -11,10 +11,8 @@ from tileup.motor import (
 W_Global = 50
 Beta_Global = 1.0
 # Parámetros del beam search:
-#   W    = ancho del beam, cuántos estados se conservan en cada nivel.
-#          Más W explora más alternativas, pero cada nivel tarda más.
-#   Beta = peso del término de lookahead en la heurística: cuánto se premia
-#          tener espacios libres junto a fichas del mismo color que vendrán.
+#   W    = ancho del beam, cuántos estados se conservan en cada nivel. Más W explora más alternativas, pero cada nivel tarda más.
+#   Beta = peso del término de lookahead en la heurística: cuanto mas grande mas se va al futuro.
 
 
 def _vecinos(fila: int, col: int, n: int) -> List[Tuple[int, int]]:
