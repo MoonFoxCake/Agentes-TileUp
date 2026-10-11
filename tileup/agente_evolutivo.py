@@ -276,8 +276,24 @@ def resolver(instancia: Instancia, semilla: int, tiempo_limite: float,
             break
 
         # --- Reemplazo generacional ---
+        # Se evalúa la nueva población uno por uno con checkeo de tiempo.
+        # Si se agota el plazo antes de terminar, se descarta la población
+        # nueva (parcialmente evaluada) y se conserva la anterior, que ya
+        # está completa y evaluada.
+        nuevas_aptitudes: list[Fitness] = []
+        interrumpido_por_tiempo = False
+        for c in nueva_pob:
+            if time.monotonic() >= plazo:
+                interrumpido_por_tiempo = True
+                break
+            nuevas_aptitudes.append(aptitud_de(c))
+
+        if interrumpido_por_tiempo:
+            motivo = "tiempo"
+            break
+
         poblacion = nueva_pob
-        aptitudes = [aptitud_de(c) for c in poblacion]
+        aptitudes = nuevas_aptitudes
 
         # --- Actualizar mejor global y contador de estancamiento ---
         mejor_i = max(range(len(poblacion)), key=lambda i: aptitudes[i])
