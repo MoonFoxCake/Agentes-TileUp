@@ -23,3 +23,11 @@ Otro punto del cual se trata con la IA es el entender la heuristica y el program
 
 ## Pruebas y CLI.
  La generación del código de pruebas (unitarias y de integración) y el punto de entrada por línea de comandos se hicieron con DeepSeek, a partir de los requisitos de la especificación.
+
+## Instalador y menú interactivo (`setup_and_menu.py`)
+
+El script `setup_and_menu.py` se desarrolló con apoyo de DeepSeek (con revisión y ajustes por parte del grupo). Su objetivo es concentrar en un solo archivo la instalación del entorno virtual y las dependencias (`pytest` y `matplotlib`), y ofrecer un menú de consola que expone los comandos del proyecto sin necesidad de recordar rutas ni activar el entorno manualmente.
+
+**Alcance del apoyo de la IA.** DeepSeek propuso la estructura general del script (detección del sistema operativo, creación del venv, envoltorio para ejecutar comandos con salida en vivo y organización del menú por secciones), las funciones auxiliares para listar instancias de `instancias/`, sugerir nombres de salida en `resultados/` y validar soluciones, y colaboró en la redacción de los mensajes al usuario y el manejo de casos borde.
+
+**Qué revisó y ajustó el equipo.** El grupo verificó que cada opción del menú invocara el comando correcto, que el script trabajara siempre desde la raíz del proyecto (`os.chdir(PROJECT_ROOT)`), que las rutas por defecto respetaran la estructura de carpetas del repositorio y que el comportamiento fuera correcto en Linux y Windows. El script se limita a invocar `tileup/cli.py`, `tileup/validador.py` y `tileup/generador_instancias.py`; no reimplementa reglas del juego, del motor ni del validador.
