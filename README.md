@@ -367,34 +367,3 @@ python -m tileup.comparacion_experimental
 
 Este comando genera un CSV con los resultados y deja las soluciones en `resultados/comparacion_experimental/`. Las configuraciones incluyen variaciones de N, K y M, y se ejecutan con las semillas 1, 2 y 3 para cada agente. Los resultados se pueden analizar con las mismas herramientas de escalabilidad.
 
----
-
-## 11. Estructura del repositorio
-
-```
-Agentes-TileUp/
-├── pytest.ini
-├── requirements.txt
-├── setup_and_menu.py          # instalador y menú interactivo
-├── README.md
-├── tileup/                    # paquete principal
-│   ├── __init__.py
-│   ├── cli.py
-│   ├── motor.py
-│   ├── validador.py
-│   ├── generador_instancias.py
-│   ├── experimento_escalabilidad.py
-│   ├── analizar_escalabilidad.py
-│   └── comparacion_experimental.py
-├── tests/
-│   ├── test_motor.py
-│   ├── test_validador.py
-│   ├── test_agentes.py
-│   └── test_integracion.py
-├── instancias/                # instancias de entrada
-│   ├── ejemplo_enunciado.txt
-│   └── ...
-├── resultados/                # soluciones, CSV y gráficas
-└── .venv/                     # entorno virtual (generado por setup_and_menu.py)
-```
-
