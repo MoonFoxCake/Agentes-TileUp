@@ -13,5 +13,13 @@ Este agente se desarrolló con apoyo de varias herramientas de IA, cada una en u
 **Definición del algoritmo evolutivo eficiente.** Con ayuda de Claude se
 exploraron varias alternativas para la codificación del cromosoma, el diseño de la función de aptitud y los operadores de variación. La discusión concluyó en la codificación indirecta, la aptitud lexicográfica de tres componentes y el cruce de dos puntos con mutación por reset. Cada una de esas decisiones están justificadas en el documento ´Informe.md´.
 
+
+## Busqueda
+
+Este agente fue hecho con apoyo de deepseek, para la busqueda de informacion y decidir el agente, ya que se investigo distintos algoritmos, no solo eso, se utilizo la IA para intentar entender los conceptos basicos para formular bien el algoritmo
+
+Otro punto del cual se trata con la IA es el entender la heuristica y el programa en si, en todo momento se verifico y no se hizo de forma ciega.
+
+
 ## Pruebas y CLI.
  La generación del código de pruebas (unitarias y de integración) y el punto de entrada por línea de comandos se hicieron con DeepSeek, a partir de los requisitos de la especificación.
