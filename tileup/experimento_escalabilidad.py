@@ -31,6 +31,16 @@ TIEMPO_LIMITE = 15.0                 # segundos por corrida
 
 DIR_INSTANCIAS = "instancias/escalabilidad"
 DIR_SALIDAS = "soluciones/escalabilidad"
+CSV_SALIDA = "resultados/escalabilidad.csv"
+
+# La versión de demostración (--rapido / --demo) escribe en carpetas aparte para
+# no pisar los archivos de la batería completa.
+DEMO_N_VALORES = [5, 7]
+DEMO_K_VALORES = [3, 5]
+DEMO_TIEMPO_LIMITE = 2.0
+DEMO_DIR_INSTANCIAS = "instancias/demo"
+DEMO_DIR_SALIDAS = "soluciones/demo"
+DEMO_CSV_SALIDA = "resultados/demo/escalabilidad.csv"
 
 
 # --------------------------------------------------------------------------- #
@@ -58,13 +68,14 @@ def correr_evolutivo(instancia, semilla, tiempo_limite):
 # --------------------------------------------------------------------------- #
 # Batería
 # --------------------------------------------------------------------------- #
-def asegurar_directorios():
-    os.makedirs(DIR_INSTANCIAS, exist_ok=True)
-    os.makedirs(DIR_SALIDAS, exist_ok=True)
+def asegurar_directorios(dir_instancias, dir_salidas):
+    os.makedirs(dir_instancias, exist_ok=True)
+    os.makedirs(dir_salidas, exist_ok=True)
 
 
 def correr_grid(agentes=("busqueda", "evolutivo"), n_valores=None, k_valores=None,
-                semillas_instancia=None, semillas_agente=None, tiempo_limite=None):
+                semillas_instancia=None, semillas_agente=None, tiempo_limite=None,
+                dir_instancias=None, dir_salidas=None):
     """
     agentes: iterable de strings, subconjunto de {"busqueda", "evolutivo"}.
     Los demás parámetros, si no se indican, toman los valores de la
@@ -75,21 +86,23 @@ def correr_grid(agentes=("busqueda", "evolutivo"), n_valores=None, k_valores=Non
     semillas_instancia = semillas_instancia or SEMILLAS_INSTANCIA
     semillas_agente = semillas_agente or SEMILLAS_AGENTE
     tiempo_limite = tiempo_limite or TIEMPO_LIMITE
-    asegurar_directorios()
+    dir_instancias = dir_instancias or DIR_INSTANCIAS
+    dir_salidas = dir_salidas or DIR_SALIDAS
+    asegurar_directorios(dir_instancias, dir_salidas)
     filas = []
 
     for n in n_valores:
         for k in k_valores:
             m = int(round(n * n * M_PROPORCION))
             for si in semillas_instancia:
-                ruta_inst = f"{DIR_INSTANCIAS}/n{n}_k{k}_m{m}_si{si}.txt"
+                ruta_inst = f"{dir_instancias}/n{n}_k{k}_m{m}_si{si}.txt"
                 escribir_instancia(ruta_inst, n, k, m, si)
                 instancia = leer_instancia(ruta_inst)
 
                 for agente in agentes:
                     for sa in semillas_agente:
                         ruta_sol = (
-                            f"{DIR_SALIDAS}/"
+                            f"{dir_salidas}/"
                             f"{agente}_n{n}_k{k}_m{m}_si{si}_sa{sa}.txt"
                         )
                         t0 = time.monotonic()
@@ -128,7 +141,7 @@ def correr_grid(agentes=("busqueda", "evolutivo"), n_valores=None, k_valores=Non
     return filas
 
 
-def escribir_csv(filas, ruta="resultados/escalabilidad.csv"):
+def escribir_csv(filas, ruta=CSV_SALIDA):
     if not filas:
         print("Sin filas para escribir.")
         return
@@ -142,21 +155,29 @@ def escribir_csv(filas, ruta="resultados/escalabilidad.csv"):
 
 def main():
     parser = argparse.ArgumentParser(description="Batería de escalabilidad de TileUp.")
-    parser.add_argument("--rapido", action="store_true",
-                        help="Versión reducida para probar (pocos tamaños, 1 semilla, 3 s por corrida).")
+    parser.add_argument("--rapido", "--demo", dest="rapido", action="store_true",
+                        help="Versión reducida para probar o demostrar (N=5,7; K=3,5; "
+                             "1 semilla; 2 s por corrida). Escribe en carpetas aparte "
+                             "(instancias/demo, soluciones/demo, resultados/demo) para no "
+                             "pisar la batería completa.")
     parser.add_argument("--agentes", nargs="+", default=["busqueda", "evolutivo"],
                         choices=["busqueda", "evolutivo"], help="Agentes a ejecutar.")
-    parser.add_argument("--salida", default="resultados/escalabilidad.csv",
-                        help="Ruta del CSV de resultados.")
+    parser.add_argument("--salida", default=None,
+                        help="Ruta del CSV de resultados (por defecto resultados/escalabilidad.csv, "
+                             "o resultados/demo/escalabilidad.csv con --rapido).")
     args = parser.parse_args()
 
     if args.rapido:
-        filas = correr_grid(agentes=args.agentes, n_valores=[5, 7], k_valores=[3, 5],
+        filas = correr_grid(agentes=args.agentes,
+                            n_valores=DEMO_N_VALORES, k_valores=DEMO_K_VALORES,
                             semillas_instancia=[100], semillas_agente=[0],
-                            tiempo_limite=3.0)
+                            tiempo_limite=DEMO_TIEMPO_LIMITE,
+                            dir_instancias=DEMO_DIR_INSTANCIAS,
+                            dir_salidas=DEMO_DIR_SALIDAS)
+        escribir_csv(filas, args.salida or DEMO_CSV_SALIDA)
     else:
         filas = correr_grid(agentes=args.agentes)
-    escribir_csv(filas, args.salida)
+        escribir_csv(filas, args.salida or CSV_SALIDA)
 
 
 if __name__ == "__main__":
